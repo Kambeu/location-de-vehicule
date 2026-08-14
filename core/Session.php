@@ -108,6 +108,39 @@ class Session
     }
 
     // ----------------------------------------------------------------
+    //  CSRF
+    // ----------------------------------------------------------------
+
+    /**
+     * Génère (ou retourne) le token CSRF de la session courante.
+     */
+    public static function generateCsrf(): string
+    {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        return $_SESSION['csrf_token'];
+    }
+
+    /**
+     * Vérifie le token CSRF soumis dans $_POST.
+     * Lève une réponse 403 et stoppe l'exécution si invalide.
+     */
+    public static function verifyCsrf(): void
+    {
+        $submitted = $_POST['csrf_token'] ?? '';
+        $stored    = $_SESSION['csrf_token'] ?? '';
+
+        if (empty($stored) || !hash_equals($stored, $submitted)) {
+            http_response_code(403);
+            die("<h1>403 — Requête invalide</h1><p>Token CSRF manquant ou incorrect.</p>");
+        }
+
+        // Rotation du token après vérification
+        unset($_SESSION['csrf_token']);
+    }
+
+    // ----------------------------------------------------------------
     //  ACCÈS GÉNÉRIQUE
     // ----------------------------------------------------------------
 

@@ -31,6 +31,12 @@
 
         <form method="POST" action="<?= APP_URL ?>/index.php?page=login" novalidate>
 
+            <?php
+            // Génération du token CSRF
+            $csrfToken = Session::generateCsrf();
+            ?>
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+
             <div class="form-group">
                 <label for="email">Adresse email <span class="required">*</span></label>
                 <div class="input-wrapper">

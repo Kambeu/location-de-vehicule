@@ -31,6 +31,9 @@
 
         <form method="POST" action="<?= APP_URL ?>/index.php?page=register" novalidate>
 
+            <?php $csrfToken = Session::generateCsrf(); ?>
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+
             <div class="form-group">
                 <label for="nom">Nom <span class="required">*</span></label>
                 <input type="text" id="nom" name="nom"

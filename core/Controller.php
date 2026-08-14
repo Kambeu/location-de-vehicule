@@ -94,6 +94,23 @@ abstract class Controller
     }
 
     /**
+     * Vérifie le token CSRF — à appeler en début de chaque action POST.
+     */
+    protected function verifyCsrf(): void
+    {
+        Session::verifyCsrf();
+    }
+
+    /**
+     * Génère un champ CSRF caché prêt à insérer dans un formulaire.
+     */
+    protected function csrfField(): string
+    {
+        $token = Session::generateCsrf();
+        return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($token) . '">';
+    }
+
+    /**
      * Retourne la méthode HTTP courante.
      */
     protected function method(): string

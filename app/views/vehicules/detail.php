@@ -46,6 +46,8 @@
                 <?php if (Session::isLoggedIn()): ?>
 
                 <form method="POST" action="<?= APP_URL ?>/index.php?page=vehicule-reserver">
+                    <?php $csrfToken = Session::generateCsrf(); ?>
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="vehicule_id" value="<?= (int)$vehicule['ID_VEHICULE'] ?>">
 
                     <div class="form-row">

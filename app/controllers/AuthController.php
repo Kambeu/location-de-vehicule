@@ -25,6 +25,7 @@ class AuthController extends Controller
         $rememberedEmail = htmlspecialchars($_COOKIE['remember_email'] ?? '');
 
         if ($this->isPost()) {
+            $this->verifyCsrf();
             $email    = $this->post('email');
             $password = $_POST['password'] ?? '';
             $remember = isset($_POST['remember']);
@@ -77,6 +78,7 @@ class AuthController extends Controller
         $old    = [];
 
         if ($this->isPost()) {
+            $this->verifyCsrf();
 
             // Récupération
             $old = [

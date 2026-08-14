@@ -75,6 +75,7 @@ class VehiculeController extends Controller
             $this->redirect('vehicules');
         }
 
+        $this->verifyCsrf();
         $vehiculeId  = (int)   $this->post('vehicule_id');
         $dateDebut   =         $this->post('date_debut');
         $dateFin     =         $this->post('date_fin');
