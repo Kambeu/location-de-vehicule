@@ -1,32 +1,33 @@
 <?php
 
 /**
- * Database — Singleton MySQLi
- * Une seule connexion partagée dans toute l'application.
+ * Database — Singleton MySQLi avec gestion d'erreurs complète.
  */
 class Database
 {
     private static ?mysqli $instance = null;
 
-    // Empêcher instanciation directe
     private function __construct() {}
     private function __clone() {}
 
-    /**
-     * Retourne la connexion unique à la base de données.
-     */
     public static function getInstance(): mysqli
     {
         if (self::$instance === null) {
+
+            // Désactiver les exceptions MySQLi pour gérer les erreurs manuellement
+            mysqli_report(MYSQLI_REPORT_OFF);
+
             $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
-            if ($conn->connect_error) {
-                // En production, loguer l'erreur et afficher un message générique
-                error_log("DB connection failed: " . $conn->connect_error);
-                die("Service temporairement indisponible. Veuillez réessayer plus tard.");
+            if ($conn->connect_errno) {
+                error_log("DB connect error [{$conn->connect_errno}]: {$conn->connect_error}");
+                die("Service temporairement indisponible.");
             }
 
             $conn->set_charset('utf8mb4');
+            // Désactiver le mode strict pour éviter les rejets sur champs NULL
+            $conn->query("SET sql_mode = ''");
+
             self::$instance = $conn;
         }
 

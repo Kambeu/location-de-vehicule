@@ -1,8 +1,10 @@
 <?php
 
 /**
- * UserModel — Toutes les opérations BDD liées aux utilisateurs.
- * Aucune logique HTML ni session ici.
+ * UserModel — Opérations BDD sur la table `utilisateur`.
+ *
+ * Colonnes : ID_UTILSATEUR | NOM | PRENOM | ADRESSE_EMAIL
+ *            MOT_DE_PASSE  | NUMERO_DE_TELEPHONE | ROLE | DATE_D_INSCRIPTION
  */
 class UserModel
 {
@@ -13,15 +15,56 @@ class UserModel
         $this->db = Database::getInstance();
     }
 
-    /**
-     * Vérifie si un email ou username est déjà pris.
-     */
-    public function existsByEmailOrUsername(string $email, string $username): bool
+    // ----------------------------------------------------------------
+    //  LECTURE
+    // ----------------------------------------------------------------
+
+    public function findByEmail(string $email): ?array
     {
         $stmt = $this->db->prepare(
-            "SELECT id FROM " . TABLE_USERS . " WHERE email = ? OR username = ? LIMIT 1"
+            "SELECT ID_UTILSATEUR, NOM, PRENOM, ADRESSE_EMAIL,
+                    MOT_DE_PASSE, NUMERO_DE_TELEPHONE, ROLE, DATE_D_INSCRIPTION
+             FROM utilisateur
+             WHERE ADRESSE_EMAIL = ?
+             LIMIT 1"
         );
-        $stmt->bind_param("ss", $email, $username);
+        if (!$stmt) {
+            error_log("findByEmail prepare error: " . $this->db->error);
+            return null;
+        }
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $user = $stmt->get_result()->fetch_assoc() ?: null;
+        $stmt->close();
+        return $user;
+    }
+
+    public function findById(int $id): ?array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT ID_UTILSATEUR, NOM, PRENOM, ADRESSE_EMAIL,
+                    NUMERO_DE_TELEPHONE, ROLE, DATE_D_INSCRIPTION
+             FROM utilisateur
+             WHERE ID_UTILSATEUR = ?
+             LIMIT 1"
+        );
+        if (!$stmt) return null;
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $user = $stmt->get_result()->fetch_assoc() ?: null;
+        $stmt->close();
+        return $user;
+    }
+
+    public function emailExists(string $email): bool
+    {
+        $stmt = $this->db->prepare(
+            "SELECT ID_UTILSATEUR FROM utilisateur
+             WHERE ADRESSE_EMAIL = ?
+             LIMIT 1"
+        );
+        if (!$stmt) return false;
+        $stmt->bind_param("s", $email);
         $stmt->execute();
         $stmt->store_result();
         $exists = $stmt->num_rows > 0;
@@ -29,67 +72,75 @@ class UserModel
         return $exists;
     }
 
-    /**
-     * Insère un nouvel utilisateur. Retourne true si succès.
-     */
+    // ----------------------------------------------------------------
+    //  ÉCRITURE
+    // ----------------------------------------------------------------
+
     public function create(array $data): bool
     {
-        $hashed = password_hash($data['password'], PASSWORD_BCRYPT);
+        // Hasher le mot de passe
+        $hash = password_hash($data['mot_de_passe'], PASSWORD_BCRYPT);
+
+        // Préparer toutes les variables AVANT bind_param
+        // (bind_param prend des références, pas des expressions)
+        $nom       = trim($data['nom']);
+        $prenom    = trim($data['prenom']);
+        $email     = trim($data['email']);
+        $telephone = (!empty($data['telephone'])) ? trim($data['telephone']) : null;
+        $role      = 'client';
 
         $stmt = $this->db->prepare(
-            "INSERT INTO " . TABLE_USERS . "
-             (username, email, password, full_name, date_naiss, pays, genre, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())"
-        );
-        $stmt->bind_param(
-            "sssssss",
-            $data['username'],
-            $data['email'],
-            $hashed,
-            $data['full_name'],
-            $data['date_naiss'],
-            $data['pays'],
-            $data['genre']
+            "INSERT INTO utilisateur
+             (NOM, PRENOM, ADRESSE_EMAIL, MOT_DE_PASSE,
+              NUMERO_DE_TELEPHONE, ROLE, DATE_D_INSCRIPTION)
+             VALUES (?, ?, ?, ?, ?, ?, NOW())"
         );
 
+        if (!$stmt) {
+            error_log("UserModel::create() prepare error: " . $this->db->error . " | errno: " . $this->db->errno);
+            return false;
+        }
+
+        $stmt->bind_param("ssssss", $nom, $prenom, $email, $hash, $telephone, $role);
+
+        $result = $stmt->execute();
+
+        if (!$result) {
+            error_log("UserModel::create() execute error: " . $stmt->error . " | errno: " . $stmt->errno);
+        }
+
+        $stmt->close();
+        return $result;
+    }
+
+    public function update(int $id, array $data): bool
+    {
+        $nom       = $data['nom'];
+        $prenom    = $data['prenom'];
+        $telephone = $data['telephone'] ?? null;
+
+        $stmt = $this->db->prepare(
+            "UPDATE utilisateur
+             SET NOM = ?, PRENOM = ?, NUMERO_DE_TELEPHONE = ?
+             WHERE ID_UTILSATEUR = ?"
+        );
+        if (!$stmt) return false;
+        $stmt->bind_param("sssi", $nom, $prenom, $telephone, $id);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
     }
 
-    /**
-     * Trouve un utilisateur par email. Retourne le tableau ou null.
-     */
-    public function findByEmail(string $email): ?array
+    public function updatePassword(int $id, string $newPassword): bool
     {
+        $hash = password_hash($newPassword, PASSWORD_BCRYPT);
         $stmt = $this->db->prepare(
-            "SELECT id, username, full_name, email, password, genre
-             FROM " . TABLE_USERS . "
-             WHERE email = ? LIMIT 1"
+            "UPDATE utilisateur SET MOT_DE_PASSE = ? WHERE ID_UTILSATEUR = ?"
         );
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $user   = $result->fetch_assoc() ?: null;
+        if (!$stmt) return false;
+        $stmt->bind_param("si", $hash, $id);
+        $result = $stmt->execute();
         $stmt->close();
-        return $user;
-    }
-
-    /**
-     * Trouve un utilisateur par son ID.
-     */
-    public function findById(int $id): ?array
-    {
-        $stmt = $this->db->prepare(
-            "SELECT id, username, full_name, email, genre, pays, date_naiss, created_at
-             FROM " . TABLE_USERS . "
-             WHERE id = ? LIMIT 1"
-        );
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $user   = $result->fetch_assoc() ?: null;
-        $stmt->close();
-        return $user;
+        return $result;
     }
 }

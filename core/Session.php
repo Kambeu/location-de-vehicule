@@ -2,6 +2,8 @@
 
 /**
  * Session — Gestion centralisée des sessions et messages flash.
+ * Aligné sur la table `utilisateur` :
+ *   ID_UTILSATEUR | NOM | PRENOM | ADRESSE_EMAIL | ROLE
  */
 class Session
 {
@@ -15,17 +17,30 @@ class Session
         }
     }
 
-    // ===== AUTHENTIFICATION =====
+    // ----------------------------------------------------------------
+    //  AUTHENTIFICATION
+    // ----------------------------------------------------------------
 
+    /**
+     * Enregistre l'utilisateur en session après connexion réussie.
+     * Attend un tableau issu de UserModel::findByEmail().
+     */
     public static function setUser(array $user): void
     {
         session_regenerate_id(true); // Prévention fixation de session
-        $_SESSION['user_id']   = $user['id'];
-        $_SESSION['username']  = $user['username'];
-        $_SESSION['full_name'] = $user['full_name'];
-        $_SESSION['email']     = $user['email'];
-        $_SESSION['genre']     = $user['genre'];
+
+        $_SESSION['user_id']   = $user['ID_UTILSATEUR'];
+        $_SESSION['nom']       = $user['NOM'];
+        $_SESSION['prenom']    = $user['PRENOM'];
+        $_SESSION['email']     = $user['ADRESSE_EMAIL'];
+        $_SESSION['role']      = $user['ROLE'] ?? 'client';
         $_SESSION['logged_in'] = true;
+    }
+
+    /** Retourne le prénom + nom affiché dans l'interface. */
+    public static function fullName(): string
+    {
+        return trim(($_SESSION['prenom'] ?? '') . ' ' . ($_SESSION['nom'] ?? ''));
     }
 
     public static function isLoggedIn(): bool
@@ -33,43 +48,68 @@ class Session
         return isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
     }
 
+    public static function isAdmin(): bool
+    {
+        return self::isLoggedIn() && ($_SESSION['role'] ?? '') === 'admin';
+    }
+
+    /**
+     * Détruit proprement la session et son cookie.
+     */
     public static function destroy(): void
     {
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {
             $p = session_get_cookie_params();
             setcookie(session_name(), '', time() - 42000,
-                $p['path'], $p['domain'], $p['secure'], $p['httponly']
-            );
+                $p['path'], $p['domain'], $p['secure'], $p['httponly']);
         }
         session_destroy();
     }
 
-    // ===== MESSAGES FLASH =====
+    // ----------------------------------------------------------------
+    //  MESSAGES FLASH
+    // ----------------------------------------------------------------
 
+    /**
+     * Enregistre un message flash.
+     * @param string $type  'success' | 'error' | 'warning' | 'info'
+     */
     public static function setFlash(string $type, string $message): void
     {
         $_SESSION['flash'][$type] = $message;
     }
 
+    /**
+     * Retourne le HTML des messages flash et les efface.
+     */
     public static function getFlash(): string
     {
         if (empty($_SESSION['flash'])) {
             return '';
         }
 
+        $icons = [
+            'success' => '✅',
+            'error'   => '⚠️',
+            'warning' => '🔔',
+            'info'    => 'ℹ️',
+        ];
+
         $html = '';
         foreach ($_SESSION['flash'] as $type => $message) {
             $safe = htmlspecialchars($message);
-            $icon = ($type === 'error') ? '⚠️' : '✅';
-            $html .= "<div class=\"alert alert-{$type}\">{$icon} {$safe}</div>";
+            $icon = $icons[$type] ?? 'ℹ️';
+            $html .= "<div class=\"alert alert-{$type}\">{$icon} {$safe}</div>\n";
         }
 
         unset($_SESSION['flash']);
         return $html;
     }
 
-    // ===== RACCOURCIS ACCÈS SESSION =====
+    // ----------------------------------------------------------------
+    //  ACCÈS GÉNÉRIQUE
+    // ----------------------------------------------------------------
 
     public static function get(string $key): mixed
     {

@@ -43,8 +43,9 @@ class Router
         $controller = $route['controller'];
         $action     = $route['action'];
 
-        // Charger et instancier le contrôleur
-        $file = APP_ROOT . '/app/controllers/' . $controller . '.php';
+        // Gérer les contrôleurs dans des sous-dossiers (ex: Admin\VehiculeController)
+        $controllerPath = str_replace('\\', '/', $controller);
+        $file = APP_ROOT . '/app/controllers/' . $controllerPath . '.php';
 
         if (!file_exists($file)) {
             $this->notFound();
@@ -52,7 +53,10 @@ class Router
         }
 
         require_once $file;
-        $ctrl = new $controller();
+
+        // Instancier avec le nom de classe simple (sans namespace)
+        $className = class_exists($controller) ? $controller : basename(str_replace('\\', '/', $controller));
+        $ctrl = new $className();
         $ctrl->$action();
     }
 

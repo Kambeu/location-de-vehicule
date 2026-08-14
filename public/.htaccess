@@ -1,0 +1,10 @@
+Options -Indexes
+
+RewriteEngine On
+
+# Ne pas réécrire les fichiers et dossiers existants (CSS, images, etc.)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Tout redirige vers index.php en conservant la query string
+RewriteRule ^(.*)$ index.php [QSA,L]
