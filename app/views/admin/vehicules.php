@@ -45,9 +45,16 @@
                     <td style="color:var(--text-muted);font-size:12px;">#<?= (int)$v['ID_VEHICULE'] ?></td>
 
                     <td>
-                        <?php if (!empty($v['IMAGE_PRINCIPALE'])): ?>
-                            <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($v['IMAGE_PRINCIPALE']) ?>"
-                                 alt="" style="width:60px;height:42px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
+                        <?php
+                        $img = $v['IMAGE_PRINCIPALE'] ?? '';
+                        $imgSrc = (!empty($img))
+                            ? (str_starts_with($img, 'http') ? $img : APP_URL . '/assets/uploads/' . $img)
+                            : '';
+                        ?>
+                        <?php if ($imgSrc): ?>
+                            <img src="<?= htmlspecialchars($imgSrc) ?>"
+                                 alt="" style="width:60px;height:42px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"
+                                 onerror="this.style.display='none'">
                         <?php else: ?>
                             <div style="width:60px;height:42px;background:var(--bg-surface);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid var(--border);">🚗</div>
                         <?php endif; ?>

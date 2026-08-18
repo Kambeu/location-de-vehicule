@@ -10,9 +10,16 @@
 
         <!-- PHOTO -->
         <div class="detail-media">
-            <?php if (!empty($vehicule['IMAGE_PRINCIPALE'])): ?>
-                <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($vehicule['IMAGE_PRINCIPALE']) ?>"
-                     alt="<?= htmlspecialchars($vehicule['MARQUE'] . ' ' . $vehicule['MODELE']) ?>">
+            <?php
+            $img = $vehicule['IMAGE_PRINCIPALE'] ?? '';
+            $imgSrc = (!empty($img))
+                ? (str_starts_with($img, 'http') ? $img : APP_URL . '/assets/uploads/' . $img)
+                : '';
+            ?>
+            <?php if ($imgSrc): ?>
+                <img src="<?= htmlspecialchars($imgSrc) ?>"
+                     alt="<?= htmlspecialchars($vehicule['MARQUE'] . ' ' . $vehicule['MODELE']) ?>"
+                     onerror="this.parentElement.innerHTML='<div class=\'detail-media-placeholder\'>🚗</div>'">
             <?php else: ?>
                 <div class="detail-media-placeholder">🚗</div>
             <?php endif; ?>

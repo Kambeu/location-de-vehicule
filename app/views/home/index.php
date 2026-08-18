@@ -71,9 +71,16 @@
                 <?php foreach ($vehiculesVedette as $v): ?>
                 <div class="vehicule-card">
                     <div class="card-img">
-                        <?php if (!empty($v['IMAGE_PRINCIPALE'])): ?>
-                            <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($v['IMAGE_PRINCIPALE']) ?>"
-                                 alt="<?= htmlspecialchars($v['MARQUE'] . ' ' . $v['MODELE']) ?>">
+                        <?php
+                        $img = $v['IMAGE_PRINCIPALE'] ?? '';
+                        $imgSrc = (!empty($img))
+                            ? (str_starts_with($img, 'http') ? $img : APP_URL . '/assets/uploads/' . $img)
+                            : '';
+                        ?>
+                        <?php if ($imgSrc): ?>
+                            <img src="<?= htmlspecialchars($imgSrc) ?>"
+                                 alt="<?= htmlspecialchars($v['MARQUE'] . ' ' . $v['MODELE']) ?>"
+                                 onerror="this.parentElement.innerHTML='<div class=\'card-img-placeholder\'>🚗</div>'">
                         <?php else: ?>
                             <div class="card-img-placeholder">🚗</div>
                         <?php endif; ?>
@@ -98,7 +105,7 @@
                                 <span class="amount"><?= number_format((float)$v['TARIF_JOUR'], 0, ',', ' ') ?> FCFA</span>
                                 <span class="unit">par jour</span>
                             </div>
-                            <a href="<?= APP_URL ?>/index.php?page=vehicule-detail&id=<?= (int)$v['ID_VEHICULE'] ?>"
+                            <a href=""
                                class="btn btn-primary btn-sm">Réserver</a>
                         </div>
                     </div>

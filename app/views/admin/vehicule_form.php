@@ -155,10 +155,17 @@
                     <h3 class="admin-form-section-title" style="margin-top:8px;">🖼️ Photo du véhicule</h3>
 
                     <?php if (!empty($vehicule['IMAGE_PRINCIPALE'])): ?>
+                    <?php
+                    $imgEdit = $vehicule['IMAGE_PRINCIPALE'];
+                    $imgEditSrc = str_starts_with($imgEdit, 'http')
+                        ? $imgEdit
+                        : APP_URL . '/assets/uploads/' . $imgEdit;
+                    ?>
                     <div style="margin-bottom:14px;">
-                        <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($vehicule['IMAGE_PRINCIPALE']) ?>"
+                        <img src="<?= htmlspecialchars($imgEditSrc) ?>"
                              alt="Photo actuelle"
-                             style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;border:1px solid var(--border);">
+                             style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;border:1px solid var(--border);"
+                             onerror="this.style.display='none'">
                         <p style="font-size:12px;color:var(--text-muted);margin-top:6px;">Photo actuelle — laisser vide pour conserver</p>
                     </div>
                     <?php endif; ?>

@@ -42,7 +42,7 @@
                 <div class="input-wrapper">
                     <span class="input-icon">✉️</span>
                     <input type="email" id="email" name="email"
-                           placeholder="jean@email.com"
+                           placeholder="saisissez ici"
                            value="<?= htmlspecialchars($rememberedEmail) ?>"
                            required autocomplete="email">
                 </div>
