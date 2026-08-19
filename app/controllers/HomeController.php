@@ -1,6 +1,7 @@
 <?php
 
 require_once APP_ROOT . '/app/models/VehiculeModel.php';
+require_once APP_ROOT . '/app/models/PhotoVehiculeModel.php';
 
 /**
  * HomeController — Page d'accueil.
@@ -14,13 +15,15 @@ class HomeController extends Controller
         $this->vehiculeModel = new VehiculeModel();
     }
 
-    /**
-     * GET ?page=home  (ou aucun paramètre page)
-     */
     public function index(): void
     {
-        // 6 véhicules disponibles mis en avant sur la page d'accueil
         $vehiculesVedette = $this->vehiculeModel->getDisponibles(6);
+
+        // Ajouter la photo principale à chaque véhicule
+        foreach ($vehiculesVedette as &$v) {
+            $v['_main_photo'] = PhotoVehiculeModel::getMainPhoto($v);
+        }
+        unset($v);
 
         $this->render('home/index', [
             'page_title'       => APP_NAME . " — Location de véhicules",

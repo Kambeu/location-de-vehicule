@@ -63,14 +63,9 @@
             <?php foreach ($vehicules as $v): ?>
             <div class="vehicule-card">
                 <div class="card-img">
-                    <?php
-                    $img = $v['IMAGE_PRINCIPALE'] ?? '';
-                    $imgSrc = (!empty($img))
-                        ? (str_starts_with($img, 'http') ? $img : APP_URL . '/assets/uploads/' . $img)
-                        : '';
-                    ?>
-                    <?php if ($imgSrc): ?>
-                        <img src="<?= htmlspecialchars($imgSrc) ?>"
+                    <?php $mainPhoto = $v['_main_photo'] ?? ''; ?>
+                    <?php if ($mainPhoto): ?>
+                        <img src="<?= htmlspecialchars($mainPhoto) ?>"
                              alt="<?= htmlspecialchars($v['MARQUE'] . ' ' . $v['MODELE']) ?>"
                              onerror="this.parentElement.innerHTML='<div class=\'card-img-placeholder\'>🚗</div>'">
                     <?php else: ?>

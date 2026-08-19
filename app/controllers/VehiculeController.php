@@ -2,6 +2,7 @@
 
 require_once APP_ROOT . '/app/models/VehiculeModel.php';
 require_once APP_ROOT . '/app/models/ReservationModel.php';
+require_once APP_ROOT . '/app/models/PhotoVehiculeModel.php';
 
 /**
  * VehiculeController — Catalogue, détail et réservation.
@@ -31,6 +32,12 @@ class VehiculeController extends Controller
         $vehicules  = $this->vehiculeModel->search($filtres);
         $categories = $this->vehiculeModel->getCategories();
 
+        // Ajouter la photo principale à chaque véhicule
+        foreach ($vehicules as &$v) {
+            $v['_main_photo'] = PhotoVehiculeModel::getMainPhoto($v);
+        }
+        unset($v);
+
         $this->render('vehicules/index', [
             'page_title' => "Nos véhicules — " . APP_NAME,
             'vehicules'  => $vehicules,
@@ -58,9 +65,19 @@ class VehiculeController extends Controller
             return;
         }
 
+        // Récupérer toutes les photos du dossier
+        $photos = PhotoVehiculeModel::getPhotos($vehicule['DOSSIER_PHOTOS'] ?? '');
+
+        // Fallback si dossier vide
+        if (empty($photos)) {
+            $main = PhotoVehiculeModel::getMainPhoto($vehicule);
+            if ($main) $photos = [$main];
+        }
+
         $this->render('vehicules/detail', [
             'page_title' => htmlspecialchars($vehicule['MARQUE'] . ' ' . $vehicule['MODELE']) . " — " . APP_NAME,
             'vehicule'   => $vehicule,
+            'photos'     => $photos,
         ]);
     }
 
@@ -76,14 +93,13 @@ class VehiculeController extends Controller
         }
 
         $this->verifyCsrf();
-        $vehiculeId  = (int)   $this->post('vehicule_id');
-        $dateDebut   =         $this->post('date_debut');
-        $dateFin     =         $this->post('date_fin');
-        $lieuPrise   =         $this->post('lieu_prise')  ?: 'Non précisé';
-        $lieuRetour  =         $this->post('lieu_retour') ?: 'Non précisé';
-        $errors      = [];
+        $vehiculeId = (int)   $this->post('vehicule_id');
+        $dateDebut  =         $this->post('date_debut');
+        $dateFin    =         $this->post('date_fin');
+        $lieuPrise  =         $this->post('lieu_prise')  ?: 'Non précisé';
+        $lieuRetour =         $this->post('lieu_retour') ?: 'Non précisé';
+        $errors     = [];
 
-        // Validations
         if ($vehiculeId <= 0)
             $errors[] = "Véhicule invalide.";
         if (empty($dateDebut) || empty($dateFin))
@@ -105,9 +121,8 @@ class VehiculeController extends Controller
             $this->redirect('vehicule-detail', ['id' => $vehiculeId]);
         }
 
-        // Calcul du montant
-        $jours = (int) ceil((strtotime($dateFin) - strtotime($dateDebut)) / 86400);
-        $total = $jours * (float) $vehicule['TARIF_JOUR'];
+        $jours   = (int) ceil((strtotime($dateFin) - strtotime($dateDebut)) / 86400);
+        $total   = $jours * (float) $vehicule['TARIF_JOUR'];
 
         $success = $this->reservationModel->create([
             'client_id'   => (int) Session::get('user_id'),
